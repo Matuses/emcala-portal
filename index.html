@@ -79,14 +79,11 @@ function logoutHub() {
 
 window.onload = () => {
   const s = localStorage.getItem('user_session');
-  if (!s) {
-    window.location.replace(URL_DEL_LOGIN);
-    return;
-  }
+  if (!s) { window.location.replace(URL_DEL_LOGIN); return; }
 
   const session = JSON.parse(s);
 
-  // Si la sesión no tiene lastActivity (sesión vieja), la cerramos
+  // Sesión vieja sin lastActivity → forzar re-login
   if (!session.lastActivity) {
     localStorage.removeItem('user_session');
     window.location.replace(URL_DEL_LOGIN);
@@ -100,7 +97,6 @@ window.onload = () => {
     return;
   }
 
-  // Resetear actividad al entrar al portal
   resetInactividad();
 
   document.getElementById('menuPrincipal').style.display = 'block';
@@ -113,10 +109,7 @@ window.onload = () => {
     .join('');
 };
 
-// Verificar cada minuto
 setInterval(checkInactividad, 60 * 1000);
-
-// Resetear con cualquier interacción
 ['click', 'keydown', 'touchstart', 'scroll'].forEach(ev =>
   document.addEventListener(ev, resetInactividad, { passive: true })
 );
