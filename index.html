@@ -25,21 +25,18 @@ body{font-family:'Bricolage Grotesque',sans-serif;background:linear-gradient(145
     <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:52px;font-weight:800;color:#fff;letter-spacing:-0.04em;line-height:1">EMCALA</div>
     <div style="font-size:11px;font-weight:700;letter-spacing:0.22em;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-top:6px">Gestión Integral de Operaciones</div>
   </div>
-
   <div id="menuPrincipal" style="display:none;">
-    <div class="user-info">
-      <span id="labelRol"></span>
-      <strong id="labelNombre"></strong>
-    </div>
-    
-    <a href="edf-repago.html" class="link-btn">📊 REPAGO (EDF)</a>
-    <a href="https://matuses.github.io/Relevamiento/reparaciones.html" class="link-btn">🛠️ REPARACIONES</a>
-    <a href="#" class="link-btn" style="opacity:0.6; cursor:not-allowed">📝 SOLICITUD EDF</a>
-    <a href="https://matuses.github.io/dashboard_comercial/dashboard.html" class="link-btn">📈 DASHBOARD COMERCIAL</a>
-    <a href="#" class="link-btn" style="opacity:0.6; cursor:not-allowed">🔔 NOTIFICACIONES</a>
-    
-    <button class="btn-logout-small" onclick="logoutHub()">Cerrar Sesión</button>
+  <div class="user-info">
+    <span id="labelRol"></span>
+    <strong id="labelNombre"></strong>
   </div>
+  
+  <div id="menuLinks"></div>
+  
+  <button class="btn-logout-small" onclick="logoutHub()">Cerrar Sesión</button>
+</div>
+
+  
 </div>
 
 <script>
@@ -56,12 +53,32 @@ window.onload = () => {
   } else {
     // Si hay credencial, le mostramos el menú y sus datos
     const session = JSON.parse(s);
-    document.getElementById('menuPrincipal').style.display = 'block';
-    document.getElementById('labelNombre').textContent = session.nombre;
-    document.getElementById('labelRol').textContent = session.rol;
+document.getElementById('menuPrincipal').style.display = 'block';
+document.getElementById('labelNombre').textContent = session.nombre;
+document.getElementById('labelRol').textContent = session.rol;
   }
 }
+// Menú según rol
+const menus = {
+  tecnico: [
+    { href: 'https://matuses.github.io/Relevamiento/reparaciones.html', label: '🛠️ REPARACIONES' }
+  ],
+  supervisor: [
+    { href: 'https://matuses.github.io/Relevamiento/reparaciones.html', label: '🛠️ REPARACIONES' },
+    { href: 'edf-repago.html', label: '📊 REPAGO (EDF)' },
+    { href: 'https://matuses.github.io/dashboard_comercial/dashboard.html', label: '📈 DASHBOARD COMERCIAL' }
+  ],
+  trade: [
+    { href: 'https://matuses.github.io/Relevamiento/reparaciones.html', label: '🛠️ REPARACIONES' },
+    { href: 'edf-repago.html', label: '📊 REPAGO (EDF)' },
+    { href: 'https://matuses.github.io/dashboard_comercial/dashboard.html', label: '📈 DASHBOARD COMERCIAL' }
+  ]
+};
 
+const links = menus[session.rol] || menus['supervisor'];
+document.getElementById('menuLinks').innerHTML = links
+  .map(l => `<a href="${l.href}" class="link-btn">${l.label}</a>`)
+  .join('');
 // Función para cerrar sesión
 function logoutHub() { 
   // 1. Rompemos la credencial
