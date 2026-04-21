@@ -19,46 +19,25 @@ body{font-family:'Bricolage Grotesque',sans-serif;background:linear-gradient(145
 </style>
 </head>
 <body>
-
 <div class="container">
   <div style="margin-bottom:28px">
     <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:52px;font-weight:800;color:#fff;letter-spacing:-0.04em;line-height:1">EMCALA</div>
     <div style="font-size:11px;font-weight:700;letter-spacing:0.22em;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-top:6px">Gestión Integral de Operaciones</div>
   </div>
   <div id="menuPrincipal" style="display:none;">
-  <div class="user-info">
-    <span id="labelRol"></span>
-    <strong id="labelNombre"></strong>
+    <div class="user-info">
+      <span id="labelRol"></span>
+      <strong id="labelNombre"></strong>
+    </div>
+    <div id="menuLinks"></div>
+    <button class="btn-logout-small" onclick="logoutHub()">Cerrar Sesión</button>
   </div>
-  
-  <div id="menuLinks"></div>
-  
-  <button class="btn-logout-small" onclick="logoutHub()">Cerrar Sesión</button>
-</div>
-
-  
 </div>
 
 <script>
-// ⚠️ IMPORTANTE: Esta es la URL a la que pateamos al usuario si no está logueado
 const URL_DEL_LOGIN = 'https://matuses.github.io/emcala-login/';
+const INACTIVIDAD_MAX = 10 * 60 * 1000; // 10 minutos
 
-// El "Guardia de Seguridad" corre apenas se abre la página
-window.onload = () => {
-  const s = localStorage.getItem('user_session');
-  
-  if (!s) {
-    // Si no hay credencial invisible en el navegador, lo mandamos al Login
-    window.location.replace(URL_DEL_LOGIN);
-  } else {
-    // Si hay credencial, le mostramos el menú y sus datos
-    const session = JSON.parse(s);
-document.getElementById('menuPrincipal').style.display = 'block';
-document.getElementById('labelNombre').textContent = session.nombre;
-document.getElementById('labelRol').textContent = session.rol;
-  }
-}
-// Menú según rol
 const menus = {
   tecnico: [
     { href: 'https://matuses.github.io/Relevamiento/reparaciones.html', label: '🛠️ REPARACIONES' }
@@ -75,17 +54,72 @@ const menus = {
   ]
 };
 
-const links = menus[session.rol] || menus['supervisor'];
-document.getElementById('menuLinks').innerHTML = links
-  .map(l => `<a href="${l.href}" class="link-btn">${l.label}</a>`)
-  .join('');
-// Función para cerrar sesión
-function logoutHub() { 
-  // 1. Rompemos la credencial
-  localStorage.removeItem('user_session'); 
-  // 2. Lo mandamos afuera
+function checkInactividad() {
+  const s = localStorage.getItem('user_session');
+  if (!s) return;
+  const session = JSON.parse(s);
+  if (Date.now() - session.lastActivity > INACTIVIDAD_MAX) {
+    localStorage.removeItem('user_session');
+    window.location.replace(URL_DEL_LOGIN);
+  }
+}
+
+function resetInactividad() {
+  const s = localStorage.getItem('user_session');
+  if (!s) return;
+  const session = JSON.parse(s);
+  session.lastActivity = Date.now();
+  localStorage.setItem('user_session', JSON.stringify(session));
+}
+
+function logoutHub() {
+  localStorage.removeItem('user_session');
   window.location.replace(URL_DEL_LOGIN);
 }
+
+window.onload = () => {
+  const s = localStorage.getItem('user_session');
+  if (!s) {
+    window.location.replace(URL_DEL_LOGIN);
+    return;
+  }
+
+  const session = JSON.parse(s);
+
+  // Si la sesión no tiene lastActivity (sesión vieja), la cerramos
+  if (!session.lastActivity) {
+    localStorage.removeItem('user_session');
+    window.location.replace(URL_DEL_LOGIN);
+    return;
+  }
+
+  // Verificar inactividad al entrar
+  if (Date.now() - session.lastActivity > INACTIVIDAD_MAX) {
+    localStorage.removeItem('user_session');
+    window.location.replace(URL_DEL_LOGIN);
+    return;
+  }
+
+  // Resetear actividad al entrar al portal
+  resetInactividad();
+
+  document.getElementById('menuPrincipal').style.display = 'block';
+  document.getElementById('labelNombre').textContent = session.nombre;
+  document.getElementById('labelRol').textContent = session.rol;
+
+  const links = menus[session.rol] || menus['supervisor'];
+  document.getElementById('menuLinks').innerHTML = links
+    .map(l => `<a href="${l.href}" class="link-btn">${l.label}</a>`)
+    .join('');
+};
+
+// Verificar cada minuto
+setInterval(checkInactividad, 60 * 1000);
+
+// Resetear con cualquier interacción
+['click', 'keydown', 'touchstart', 'scroll'].forEach(ev =>
+  document.addEventListener(ev, resetInactividad, { passive: true })
+);
 </script>
 </body>
 </html>
